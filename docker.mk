@@ -95,6 +95,7 @@ create-setup:
 setup:
 	make gitlab-auth
 	make vendor
+	make copy-files
 	make drupal-install
 	make packages
 	make build
