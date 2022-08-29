@@ -4,6 +4,7 @@ default: up
 
 COMPOSER_ROOT ?= /var/www/html
 DRUPAL_ROOT ?= /var/www/html/web
+DESKTOP_PATH ?= ~/Desktop/
 
 ## help	:	Print commands help.
 .PHONY: help
@@ -87,10 +88,8 @@ logs:
 .PHONY: create-setup
 create-setup:
 ##		For example: make create-setup "<project_name> <repo-git>"
-	cd ~/Desktop
-	cp drupal-pro-docker $(word 2, $(MAKECMDGOALS))-docker
-	cd $(word 2, $(MAKECMDGOALS))-docker
-	git clone $(word 3, $(MAKECMDGOALS))
+	cp -R ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
+	git clone $(word 3, $(MAKECMDGOALS)) ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker/project
 
 .PHONY: setup
 setup:
