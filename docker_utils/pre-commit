@@ -45,7 +45,7 @@ fi
 FILES=''
 echo -e "${GREEN}Checking ${GREEN}PHP code standards...${NC}"
 for FILE in $DIFF_FILES; do
-    FILES="$FILES $PROJECT_DIR/$FILE"
+    FILES="$FILES $FILE"
 done
 
 if [ ! -z "$FILES" ]; then
