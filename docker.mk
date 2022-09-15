@@ -93,18 +93,17 @@ create-setup:
 
 .PHONY: setup
 setup:
-	make gitlab-auth
-	make vendor
-	make copy-files
-	make drupal-install
-	make packages
-	make build
+	$(MAKE) gitlab-auth
+	$(MAKE) vendor
+	$(MAKE) copy-files
+	$(MAKE) drupal-install
+	$(MAKE) packages
+	$(MAKE) build
 
 .PHONY: pull
 pull:
-	make drush-cex
-	git -C ./project/ pull origin develop
-	make vendor
+	$(MAKE) drush-cex
+	$(MAKE) vendor
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) updatedb -y
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) config:import -y
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) locale:check
@@ -125,8 +124,8 @@ gitlab-auth:
 
 .PHONY: copy-files
 copy-files:
-	make copy-pre-commit
-	make copy-settings-php
+	$(MAKE) copy-pre-commit
+	$(MAKE) copy-settings-php
 
 .PHONY: copy-pre-commit
 copy-pre-commit:
@@ -150,8 +149,13 @@ build:
 
 .PHONY: restore-dump
 restore-dump:
-	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) sql-drop 
-	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) sqlq --file=$(filter-out $@,$(MAKECMDGOALS))
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) sql-drop -y
+	docker exec -i $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") gunzip -c $(filter-out $@,$(MAKECMDGOALS)) | docker exec -i $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) sql-cli
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) uli
+
+.PHONY: backup
+backup:
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) sql-dump --result-file=auto --gzip
 
 # https://stackoverflow.com/a/6273809/1826109
 %:
