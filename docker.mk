@@ -93,7 +93,6 @@ create-setup:
 
 .PHONY: setup
 setup:
-	$(MAKE) gitlab-auth
 	$(MAKE) vendor
 	$(MAKE) copy-files
 	$(MAKE) drupal-install
@@ -126,6 +125,10 @@ gitlab-auth:
 copy-files:
 	$(MAKE) copy-pre-commit
 	$(MAKE) copy-settings-php
+
+.PHONY: copy-env-file
+copy-env-file:
+	cp .env.dist .env
 
 .PHONY: copy-pre-commit
 copy-pre-commit:
