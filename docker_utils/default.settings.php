@@ -43,8 +43,9 @@ $settings['config_sync_directory'] = '../config/sync';
 
 // Uncomment the following line as needed.
 
-// $config['system.site']['mail'] = 'noreply@choosit.com';
+// $config['system.site']['mail'] = 'superadmin@admin.com';
 
+// $config['swiftmailer.transport']['smtp_host'] = 'mailhog';
 // $config['swiftmailer.transport']['transport'] = 'smtp';
 // $config['swiftmailer.transport']['smtp_port'] = 1025;
 
