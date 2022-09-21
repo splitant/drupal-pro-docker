@@ -5,6 +5,7 @@ default: help
 COMPOSER_ROOT ?= /var/www/html
 DRUPAL_ROOT ?= /var/www/html/web
 DESKTOP_PATH ?= ~/Desktop/
+DRUPAL_VER ?= latest
 
 ## help	:	Print commands help.
 .PHONY: help
@@ -99,6 +100,18 @@ setup:
 	$(MAKE) packages
 	$(MAKE) build
 
+.PHONY: create-init
+create-init:
+##		For example: make create-init "<project_name>"
+	cp -R ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
+	mkdir ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker/project
+
+.PHONY: init
+init:
+	$(MAKE) create-project
+	$(MAKE) vendor
+	$(MAKE) drupal-init
+
 .PHONY: pull
 pull:
 	$(MAKE) drush-cex
@@ -117,6 +130,18 @@ drush-cex:
 vendor:
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") composer --working-dir=$(COMPOSER_ROOT) install -o
 
+.PHONY: create-project
+create-project:
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") rmdir front
+ifeq ($(DRUPAL_VER),latest)
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") composer --working-dir=$(COMPOSER_ROOT) create-project drupal/recommended-project ./
+else
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") composer --working-dir=$(COMPOSER_ROOT) create-project drupal/recommended-project:${DRUPAL_VER} ./
+endif
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") mkdir front
+# Find a better solution (chown -R wodby:www-data web/sites/default/files ?)
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") chmod -R 777 web/sites/default/files
+	
 .PHONY: gitlab-auth
 gitlab-auth:
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") composer --working-dir=$(COMPOSER_ROOT) config --auth gitlab-token.gitlab.choosit.com ${GITLAB_TOKEN} --no-ansi --no-interaction
@@ -141,6 +166,10 @@ copy-settings-php:
 .PHONY: drupal-install
 drupal-install:
 	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) site:install minimal -y --account-name=${INSTALL_ACCOUNT_NAME} --account-pass=${INSTALL_ACCOUNT_PASS} --account-mail=${INSTALL_ACCOUNT_MAIL} --existing-config
+
+.PHONY: drupal-init
+drupal-init:
+	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_php' --format "{{ .ID }}") drush -r $(DRUPAL_ROOT) site:install -y --db-url=${DB_DRIVER}://root:${DB_ROOT_PASSWORD}@${DB_HOST}/${DB_NAME} --account-name=${INSTALL_ACCOUNT_NAME} --account-pass=${INSTALL_ACCOUNT_PASS} --account-mail=${INSTALL_ACCOUNT_MAIL}
 
 .PHONY: packages
 packages:
