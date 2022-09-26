@@ -150,6 +150,7 @@ gitlab-auth:
 copy-files:
 	$(MAKE) copy-pre-commit
 	$(MAKE) copy-settings-php
+	cp .env ./project/.env
 
 .PHONY: copy-env-file
 copy-env-file:
