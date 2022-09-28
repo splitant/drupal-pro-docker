@@ -29,7 +29,6 @@ The goal is to set up fastly a local Drupal project with docker environment for 
    cd ../<project>-docker
    make copy-env-file
    # Fill env file
-   # optionally fill GITLAB_TOKEN in .env and `make gitlab-auth`
    make up
    make init
    ```
