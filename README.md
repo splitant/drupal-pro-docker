@@ -32,3 +32,7 @@ The goal is to set up fastly a local Drupal project with docker environment for 
    make up
    make init
    ```
+
+## Nota
+
+* XDEBUG Drush in container : `DRUSH_ALLOW_XDEBUG=1 drush <drush-command-name>`
