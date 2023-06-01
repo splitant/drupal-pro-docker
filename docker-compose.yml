@@ -1,0 +1,92 @@
+version: "3.7"
+
+services:
+  drupal:
+    build:
+      context: .
+      dockerfile: .docker/drupal/Dockerfile
+      args:
+        - GROUP_ID=${GROUP_ID}
+        - USER_ID=${USER_ID}
+        - DRUPAL_TAG=${DRUPAL_TAG}
+        - XDEBUG_VERSION=${XDEBUG_VERSION}
+    container_name: "${PROJECT_NAME}_drupal"
+    user: ${USER_ID}:${GROUP_ID}
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DRIVER: ${DB_DRIVER}
+      DRUPAL_VERSION: ${DRUPAL_VERSION}
+      INSTALL_ACCOUNT_NAME: ${INSTALL_ACCOUNT_NAME}
+      INSTALL_ACCOUNT_PASS: ${INSTALL_ACCOUNT_PASS}
+      INSTALL_ACCOUNT_MAIL: ${INSTALL_ACCOUNT_MAIL}
+      DRUSH_OPTIONS_URI: "http://${PROJECT_BASE_URL}:${PROJECT_PORT}"
+      ENVIRONMENT: ${ENVIRONMENT}
+    volumes:
+      - ./project:/home/drupal/project:cached
+    labels:
+      - "traefik.http.routers.${PROJECT_NAME}_drupal.rule=Host(`${PROJECT_BASE_URL}`)"
+
+  db:
+    build:
+      context: .
+      dockerfile: .docker/mysql/Dockerfile
+      args:
+        - MYSQL_TAG=${MYSQL_TAG}
+    container_name: "${PROJECT_NAME}_db"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      interval: 5s
+      retries: 10
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: "${PROJECT_NAME}_pma"
+    environment:
+      PMA_HOST: $DB_HOST
+      PMA_USER: $DB_USER
+      PMA_PASSWORD: $DB_PASSWORD
+      UPLOAD_LIMIT: 1G
+    labels:
+      - "traefik.http.routers.${PROJECT_NAME}_pma.rule=Host(`pma.${PROJECT_BASE_URL}`)"
+
+  node:
+    build:
+      context: .
+      dockerfile: .docker/node/Dockerfile
+      args:
+        - NODE_TAG=${NODE_TAG}
+        - GROUP_ID=${GROUP_ID}
+        - USER_ID=${USER_ID}
+    container_name: "${PROJECT_NAME}_node"
+    user: ${USER_ID}:${GROUP_ID}
+    working_dir: /home/drupal/project/front
+    tty: true
+    volumes:
+    - ./project:/home/drupal/project
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: "${PROJECT_NAME}_mailhog"
+    labels:
+      - "traefik.http.services.${PROJECT_NAME}_mailhog.loadbalancer.server.port=8025"
+      - "traefik.http.routers.${PROJECT_NAME}_mailhog.rule=Host(`mailhog.${PROJECT_BASE_URL}`)"
+
+  traefik:
+    image: traefik:v2.0
+    container_name: "${PROJECT_NAME}_traefik"
+    command: --api.insecure=true --providers.docker
+    ports:
+    - "${PROJECT_PORT}:80"
+#    - '8080:8080' # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
