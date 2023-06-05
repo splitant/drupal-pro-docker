@@ -15,6 +15,8 @@ RUN apt-get update \
         default-mysql-client \
   && rm -rf /var/lib/apt/lists/*
 
+RUN docker-php-ext-install bcmath
+
 RUN groupadd -g "${GROUP_ID}" drupal; \
 	useradd  -u "${USER_ID}" -m -s /bin/bash -g drupal drupal; \
 	adduser drupal www-data;
