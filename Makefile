@@ -89,15 +89,17 @@ logs:
 ##		For example: make create-init "<project_name>"
 .PHONY: create-init
 create-init:
-	cp -R ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
+	mv ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
 	mkdir ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker/project
+	$(MAKE) copy-env-file
 
 ## create-setup : Setup local project from existing Git project.
 ##		For example: make create-setup "<project_name> <repo-git>"
 .PHONY: create-setup
 create-setup:
-	cp -R ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
+	mv ${DESKTOP_PATH}drupal-pro-docker ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker
 	git clone $(word 3, $(MAKECMDGOALS)) ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker/project
+	$(MAKE) copy-env-file
 
 ## init : Create local project.
 .PHONY: init
