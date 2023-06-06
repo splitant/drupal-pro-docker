@@ -3,7 +3,7 @@
 # Get .env vars.
 export $(grep -v '^#' "../.env" | xargs)
 
-PHP_CONTAINER_ID=`docker ps --filter name="^/${PROJECT_NAME}_php" --format "{{ .ID }}"`
+PHP_CONTAINER_ID=`docker ps --filter name="^/${PROJECT_NAME}_drupal" --format "{{ .ID }}"`
 PHP_CONTAINER_EXEC="docker exec ${PHP_CONTAINER_ID} php"
 
 # Variables
