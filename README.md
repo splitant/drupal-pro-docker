@@ -22,7 +22,7 @@ The goal is to set up fastly a local Drupal project with docker environment for 
    cd drupal-pro-docker
    make create-setup <project> <repo-git>
    # Fill env file
-   # optionally fill GITLAB_TOKEN in .env and `make gitlab-auth`
+   # optionally fill GITLAB_TOKEN in .env and add to docker-compose.yml drupal service part
    make setup
    ```
 

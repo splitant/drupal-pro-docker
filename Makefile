@@ -114,7 +114,9 @@ init:
 .PHONY: setup
 setup:
 	$(MAKE) up
+ifdef GITLAB_TOKEN
 	$(MAKE) gitlab-auth
+endif
 	$(MAKE) vendor
 	$(MAKE) web-symlink
 	$(MAKE) copy-files
