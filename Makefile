@@ -36,6 +36,12 @@ start:
 	@echo "Starting containers for $(PROJECT_NAME) from where you left off..."
 	@docker compose start
 
+## restart : Restart containers without updating.
+.PHONY: restart
+restart:
+	@echo "Restarting containers for $(PROJECT_NAME)..."
+	@docker compose restart
+
 ## stop : Stop containers.
 .PHONY: stop
 stop:
@@ -62,6 +68,12 @@ ps:
 .PHONY: shell
 shell:
 	docker exec -ti -e COLUMNS=$(shell tput cols) -e LINES=$(shell tput lines) $(shell docker ps --filter name='$(PROJECT_NAME)_$(or $(filter-out $@,$(MAKECMDGOALS)), 'drupal')' --format "{{ .ID }}") bash
+
+## shell-root : Access `php` container via shell in ROOT user.
+##		You can optionally pass an argument with a service name to open a shell on the specified container
+.PHONY: shell-root
+shell-root:
+	docker exec -u root -ti -e COLUMNS=$(shell tput cols) -e LINES=$(shell tput lines) $(shell docker ps --filter name='$(PROJECT_NAME)_$(or $(filter-out $@,$(MAKECMDGOALS)), 'drupal')' --format "{{ .ID }}") bash
 
 ## composer : Executes `composer` command in a specified `COMPOSER_ROOT` directory (default is `/var/www/html`).
 ##		To use "--flag" arguments include them in quotation marks.
@@ -101,13 +113,18 @@ create-setup:
 	git clone $(word 3, $(MAKECMDGOALS)) ${DESKTOP_PATH}$(word 2, $(MAKECMDGOALS))-docker/project
 	$(MAKE) copy-env-file
 
+.PHONY: generate-ssl-ca
+generate-ssl-ca:
+## generate-ssl-ca	:	Generates SSL certificates.
+	mkdir -p .docker/traefik/certs
+	mkcert -cert-file .docker/traefik/certs/cert.pem -key-file .docker/traefik/certs/cert-key.pem ${PROJECT_BASE_URL}
+
 ## init : Create local project.
 .PHONY: init
 init:
 	$(MAKE) up
 	$(MAKE) create-project
 	$(MAKE) vendor
-	$(MAKE) web-symlink
 	$(MAKE) drupal-init
 
 ## setup : Create local project from existing Git project.
@@ -118,7 +135,6 @@ ifdef GITLAB_TOKEN
 	$(MAKE) gitlab-auth
 endif
 	$(MAKE) vendor
-	$(MAKE) web-symlink
 	$(MAKE) copy-files
 	$(MAKE) drupal-install
 	$(MAKE) packages
@@ -129,11 +145,9 @@ endif
 pull:
 	$(MAKE) drush-cex
 	$(MAKE) vendor
-	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) updatedb -y
-	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) config:import -y
+	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) deploy
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) locale:check
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) locale:update
-	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) cache:rebuild
 
 ## drush-cex : Export configurations.
 .PHONY: drush-cex
@@ -148,25 +162,17 @@ vendor:
 ## create-project : Create project from composer.
 .PHONY: create-project
 create-project:
-	docker exec $(DRUPAL_CONTAINER) rm -rf front
 ifeq ($(DRUPAL_VERSION),latest)
 	docker exec $(DRUPAL_CONTAINER) composer --working-dir=$(COMPOSER_ROOT) create-project drupal/recommended-project ./
 else
 	docker exec $(DRUPAL_CONTAINER) composer --working-dir=$(COMPOSER_ROOT) create-project drupal/recommended-project:${DRUPAL_VERSION} ./
 endif
 	docker exec $(DRUPAL_CONTAINER) composer --working-dir=$(COMPOSER_ROOT) require drush/drush
-	docker exec $(DRUPAL_CONTAINER) mkdir front
 
 ## clean-project : Remove project directory content
 .PHONY: clean-project
 clean-project:
 	docker exec -u root -w /home/drupal $(DRUPAL_CONTAINER) bash -c 'shopt -s dotglob && rm -rf project/*'
-
-## web-symlink : Create web symbolic link in /var/www/
-.PHONY: web-symlink
-web-symlink:
-	docker exec -u root $(DRUPAL_CONTAINER) ln -sf /home/drupal/project/web /var/www/html
-	docker exec -u root $(DRUPAL_CONTAINER) chown drupal:drupal /var/www/html
 
 ## gitlab-auth : Composer create auth json.
 .PHONY: gitlab-auth

@@ -59,4 +59,7 @@ $databases['default']['default'] = [
   'collation' => 'utf8mb4_general_ci',
   'port' => getenv('DB_PORT'),
   'prefix' => '',
+  'init_commands' => [
+    'isolation_level' => 'SET SESSION tx_isolation=\'READ-COMMITTED\'',
+  ],
 ];

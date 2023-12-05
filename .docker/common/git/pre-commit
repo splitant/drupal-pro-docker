@@ -3,12 +3,12 @@
 # Get .env vars.
 export $(grep -v '^#' "../.env" | xargs)
 
-PHP_CONTAINER_ID=`docker ps --filter name="^/${PROJECT_NAME}_drupal" --format "{{ .ID }}"`
+PHP_CONTAINER_ID=$(docker ps --filter name="^/${PROJECT_NAME}_drupal" --format "{{ .ID }}")
 PHP_CONTAINER_EXEC="docker exec ${PHP_CONTAINER_ID} php"
 
 # Variables
-PROJECT_DIR=`${PHP_CONTAINER_EXEC} -r "echo dirname(dirname(dirname(realpath('$0'))));"`
-DIFF_FILES=`git diff --cached --name-only --diff-filter=ACMR HEAD web`
+PROJECT_DIR=$(${PHP_CONTAINER_EXEC} -r "echo dirname(dirname(dirname(realpath('$0'))));")
+DIFF_FILES=$(git diff --cached --name-only --diff-filter=ACMR HEAD web)
 
 # ERROR FLAGS
 ERROR_DUMP=0
@@ -25,7 +25,7 @@ NC='\e[0m'
 FILES=''
 echo -e "${GREEN}Checking PHP ${BROWN}dpm ${GREEN}and ${BROWN}lint${GREEN}...${NC}"
 for FILE in $DIFF_FILES; do
-    DIFF=`git diff --cached --diff-filter ACMR $FILE|grep -e '+.*dpm'`
+    DIFF=$(git diff --cached --diff-filter ACMR $FILE|grep -e '+.*dpm')
     if [ ! -z "$DIFF" ]; then
         FILES="${FILES}\n\t$FILE"
         ERROR_DUMP=1
@@ -43,34 +43,50 @@ if [ $ERROR_DUMP != 0 ]; then
 fi
 
 FILES=''
-echo -e "${GREEN}Checking ${GREEN}PHP code standards...${NC}"
+echo -e "${GREEN}Checking ${GREEN}PHP code quality...${NC}"
 for FILE in $DIFF_FILES; do
     FILES="$FILES $FILE"
 done
 
+FILES=$(echo $FILES | xargs)
+
 if [ ! -z "$FILES" ]; then
-   ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --ignore=*.min.js,*.min.css,*.bundle.css --standard=vendor/drupal/coder/coder_sniffer/Drupal/ruleset.xml --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml $FILES
+   ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
     if [ $? != 0 ]; then
     	echo -e "Coding standards errors have been detected. Running phpcbf..."
-    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcbf --ignore=*.min.js,*.min.css,*.bundle.css --standard=vendor/drupal/coder/coder_sniffer/Drupal/ruleset.xml --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml $FILES
+    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcbf --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
     	git add $FILES
     	echo "Running Code Sniffer again..."
-    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --ignore=*.min.js,*.min.css,*.bundle.css --standard=vendor/drupal/coder/coder_sniffer/Drupal/ruleset.xml --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml $FILES
+    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
     	if [ $? != 0 ]; then
-            echo "Errors found not fixable automatically"
-            ERROR_PHP_CS=1
+            echo "[PHPCS] Errors found not fixable automatically"
+            ERROR_PHP_QLTY=1
         fi
     fi
     
-    ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --ignore=*.min.js,*.min.css,*.bundle.css --standard=vendor/drupal/coder/coder_sniffer/DrupalPractice/ruleset.xml --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml $FILES
-    if [ $? != 0 ]; then
-        ERROR_PHP_CS=1
-    fi
+    # ${PHP_CONTAINER_EXEC} ./vendor/bin/phpmd "${FILES// /,}" ansi phpmd-ruleset.xml --exclude node_modules --suffixes inc,info,install,module,php,profile,test,theme
+    # if [ $? != 0 ]; then
+    #     echo "[PHPMD] Errors found"
+    #     ERROR_PHP_QLTY=1
+    # fi
+
+    # ${PHP_CONTAINER_EXEC} ./vendor/bin/phpstan analyze --memory-limit=-1 $FILES
+    # if [ $? != 0 ]; then
+    #     echo "[PHPSTAN] Errors found"
+    #     ERROR_PHP_QLTY=1
+    # fi
+
+    # ${PHP_CONTAINER_EXEC} ./vendor/bin/rector process --dry-run
+    # if [ $? != 0 ]; then
+    #     echo "[RECTOR PHP] Errors found"
+    #     ERROR_PHP_QLTY=1
+    # fi
 fi
 
-if [ $ERROR_PHP_CS != 0 ]; then
-    echo -e "${RED}Fix the phpcs error(s) before commit.${NC}"
+if [ $ERROR_PHP_QLTY != 0 ]; then
+    echo -e "${RED}Fix the php code quality error(s) before commit.${NC}"
 fi
+
 
 # Display message and exit status
 ! (( $ERROR_DUMP || $ERROR_PARSE || $ERROR_PHP_CS ))

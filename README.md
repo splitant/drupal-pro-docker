@@ -13,6 +13,11 @@ The goal is to set up fastly a local Drupal project with docker environment for 
 * [Official traefik Docker Image](https://hub.docker.com/_/traefik)
 * [Mailhog Docker Image](https://hub.docker.com/r/mailhog/mailhog)
 
+### Requirements
+
+* Install [mkcert](https://github.com/FiloSottile/mkcert)
+* Execute for local CA trust store: `mkcert -install`
+
 ## Getting Started
 
 ### Installation
@@ -22,7 +27,7 @@ The goal is to set up fastly a local Drupal project with docker environment for 
    cd drupal-pro-docker
    make create-setup <project> <repo-git>
    # Fill env file
-   # optionally fill GITLAB_TOKEN in .env and add to docker-compose.yml drupal service part
+   make generate-ssl-ca # Generate SSL certificates
    make setup
    ```
 
@@ -33,6 +38,7 @@ The goal is to set up fastly a local Drupal project with docker environment for 
    cd drupal-pro-docker
    make create-init <project>
    # Fill env file
+   make generate-ssl-ca # Generate SSL certificates
    make init
    ```
 

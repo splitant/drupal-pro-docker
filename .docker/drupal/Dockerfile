@@ -28,6 +28,8 @@ RUN yes | pecl install xdebug-${XDEBUG_VERSION} \
   && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
   && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
   && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/xdebug.ini \
+  && echo "xdebug.idekey=VSCODE" >> /usr/local/etc/php/conf.d/xdebug.ini \
+  && echo "xdebug.log=/tmp/xdebug_remote.log" >> /usr/local/etc/php/conf.d/xdebug.ini \
   && echo "xdebug.client_host=172.17.0.1" >> /usr/local/etc/php/conf.d/xdebug.ini
 
 ENV DRUSH_LAUNCHER_FALLBACK="/home/drupal/.composer/vendor/bin/drush"
@@ -38,9 +40,13 @@ RUN set -ex; \
   chmod +x drush.phar; \
   mv drush.phar /usr/local/bin/drush;
 
-RUN rm /var/www/html
-
 COPY .docker/drupal/conf/php.ini /usr/local/etc/php/conf.d/100-php.ini
+
+RUN rm /var/www/html; \
+  ln -sf /home/drupal/project/web /var/www/html;
+
+RUN mkdir -p /home/drupal/.ssh
+RUN chown -R drupal:drupal /home/drupal/.ssh
 
 USER drupal
 
