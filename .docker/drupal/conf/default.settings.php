@@ -54,7 +54,7 @@ $config['system.site']['mail'] = 'superadmin@admin.com';
  * Mailer
  */
 $config['symfony_mailer.mailer_transport.smtp']['configuration']['port'] = '1025';
-$config['symfony_mailer.mailer_transport.smtp']['configuration']['host'] = sprintf('%s_solr', getenv('PROJECT_NAME'));
+$config['symfony_mailer.mailer_transport.smtp']['configuration']['host'] = sprintf('%s_mailhog', getenv('PROJECT_NAME'));
 $config['symfony_mailer.mailer_transport.smtp']['configuration']['query']['query_peer'] = TRUE;
 
 /*
