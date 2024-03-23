@@ -32,6 +32,9 @@ RUN yes | pecl install xdebug-${XDEBUG_VERSION} \
   && echo "xdebug.log=/tmp/xdebug_remote.log" >> /usr/local/etc/php/conf.d/xdebug.ini \
   && echo "xdebug.client_host=172.17.0.1" >> /usr/local/etc/php/conf.d/xdebug.ini
 
+RUN pecl install redis \
+  && docker-php-ext-enable redis
+
 ENV DRUSH_LAUNCHER_FALLBACK="/home/drupal/.composer/vendor/bin/drush"
 
 RUN set -ex; \

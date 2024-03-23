@@ -4,7 +4,8 @@
 export $(grep -v '^#' "../.env" | xargs)
 
 PHP_CONTAINER_ID=$(docker ps --filter name="^/${PROJECT_NAME}_drupal" --format "{{ .ID }}")
-PHP_CONTAINER_EXEC="docker exec ${PHP_CONTAINER_ID} php"
+CONTAINER_EXEC="docker exec ${PHP_CONTAINER_ID}"
+PHP_CONTAINER_EXEC="${CONTAINER_EXEC} php"
 
 # Variables
 PROJECT_DIR=$(${PHP_CONTAINER_EXEC} -r "echo dirname(dirname(dirname(realpath('$0'))));")
@@ -43,41 +44,44 @@ if [ $ERROR_DUMP != 0 ]; then
 fi
 
 FILES=''
+ARRAY_FILES=()
 echo -e "${GREEN}Checking ${GREEN}PHP code quality...${NC}"
 for FILE in $DIFF_FILES; do
     FILES="$FILES $FILE"
+    ARRAY_FILES+=("$FILE")
 done
 
-FILES=$(echo $FILES | xargs)
+# Put all filenames in the same line.
+FILES=$(echo "$FILES" | xargs)
 
-if [ ! -z "$FILES" ]; then
-   ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
-    if [ $? != 0 ]; then
-    	echo -e "Coding standards errors have been detected. Running phpcbf..."
-    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcbf --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
-    	git add $FILES
+if [ -n "$FILES" ]; then
+    if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,www/themes/custom/*/assets "${ARRAY_FILES[@]}";
+    then
+    	echo -e "[PHPCS] Coding standards errors have been detected. Running phpcbf..."
+    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcbf --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,www/themes/custom/*/assets "${ARRAY_FILES[@]}"
+    	git add "${ARRAY_FILES[@]}"
     	echo "Running Code Sniffer again..."
-    	${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,web/themes/custom/*/assets $FILES
-    	if [ $? != 0 ]; then
+    	if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,www/themes/custom/*/assets "${ARRAY_FILES[@]}";
+        then
             echo "[PHPCS] Errors found not fixable automatically"
             ERROR_PHP_QLTY=1
         fi
     fi
     
-    # ${PHP_CONTAINER_EXEC} ./vendor/bin/phpmd "${FILES// /,}" ansi phpmd-ruleset.xml --exclude node_modules --suffixes inc,info,install,module,php,profile,test,theme
-    # if [ $? != 0 ]; then
+    # if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/phpmd "${FILES// /,}" ansi phpmd-ruleset.xml --exclude node_modules --suffixes inc,info,install,module,php,profile,test,theme;
+    # then
     #     echo "[PHPMD] Errors found"
     #     ERROR_PHP_QLTY=1
     # fi
 
-    # ${PHP_CONTAINER_EXEC} ./vendor/bin/phpstan analyze --memory-limit=-1 $FILES
-    # if [ $? != 0 ]; then
+    # if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/phpstan analyze --memory-limit=-1 "${ARRAY_FILES[@]}"; 
+    # then
     #     echo "[PHPSTAN] Errors found"
     #     ERROR_PHP_QLTY=1
     # fi
 
-    # ${PHP_CONTAINER_EXEC} ./vendor/bin/rector process --dry-run
-    # if [ $? != 0 ]; then
+    # if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/rector process --dry-run "${ARRAY_FILES[@]}"; 
+    # then
     #     echo "[RECTOR PHP] Errors found"
     #     ERROR_PHP_QLTY=1
     # fi

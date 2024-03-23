@@ -24,6 +24,7 @@ services:
       INSTALL_ACCOUNT_PASS: ${INSTALL_ACCOUNT_PASS}
       INSTALL_ACCOUNT_MAIL: ${INSTALL_ACCOUNT_MAIL}
       DRUSH_OPTIONS_URI: "https://${PROJECT_BASE_URL}"
+      PROJECT_BASE_URL: ${PROJECT_BASE_URL}
       ENVIRONMENT: ${ENVIRONMENT}
     volumes:
       - ./project:/home/drupal/project:cached
@@ -67,20 +68,11 @@ services:
     labels:
       - "traefik.http.routers.${PROJECT_NAME}_pma.rule=Host(`pma.${PROJECT_BASE_URL}`)"
 
-  node:
-    build:
-      context: .
-      dockerfile: .docker/node/Dockerfile
-      args:
-        - NODE_TAG=${NODE_TAG}
-        - GROUP_ID=${GROUP_ID}
-        - USER_ID=${USER_ID}
-    container_name: "${PROJECT_NAME}_node"
-    user: ${USER_ID}:${GROUP_ID}
-    working_dir: /home/drupal/project/web
-    tty: true
-    volumes:
-    - ./project:/home/drupal/project
+  redis:
+    image: redis:${REDIS_TAG}
+    container_name: "${PROJECT_NAME}_redis"
+    ports:
+      - 6379
 
   mailhog:
     image: mailhog/mailhog
@@ -88,6 +80,20 @@ services:
     labels:
       - "traefik.http.services.${PROJECT_NAME}_mailhog.loadbalancer.server.port=8025"
       - "traefik.http.routers.${PROJECT_NAME}_mailhog.rule=Host(`mailhog.${PROJECT_BASE_URL}`)"
+
+  solr:
+    build:
+      context: .
+      dockerfile: .docker/solr/Dockerfile
+      args:
+        - SOLR_TAG=${SOLR_TAG}
+        - SOLR_CONFIGSET_PATH=${SOLR_CONFIGSET_PATH}
+    environment:
+      - SOLR_CORE=${SOLR_CORE}
+    container_name: "${PROJECT_NAME}_solr"
+    labels:
+      - "traefik.http.services.${PROJECT_NAME}_solr.loadbalancer.server.port=8983"
+      - "traefik.http.routers.${PROJECT_NAME}_solr.rule=Host(`solr.${PROJECT_BASE_URL}`)"
 
   traefik:
     image: traefik:v2.0

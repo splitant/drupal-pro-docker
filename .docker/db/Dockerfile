@@ -3,4 +3,4 @@ ARG DB_IMAGE
 
 FROM ${DB_IMAGE}:${DB_TAG}
 
-COPY .docker/db/conf/custom.cnf /etc/db/conf.d/custom.cnf
+COPY .docker/db/conf/custom.cnf /etc/mysql/conf.d/custom.cnf

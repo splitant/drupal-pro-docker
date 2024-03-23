@@ -131,19 +131,13 @@ init:
 .PHONY: setup
 setup:
 	$(MAKE) up
-ifdef GITLAB_TOKEN
-	$(MAKE) gitlab-auth
-endif
 	$(MAKE) vendor
 	$(MAKE) copy-files
 	$(MAKE) drupal-install
-	$(MAKE) packages
-	$(MAKE) build
 
 ## pull : Deploy on local.
 .PHONY: pull
 pull:
-	$(MAKE) drush-cex
 	$(MAKE) vendor
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) deploy
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) locale:check
@@ -173,11 +167,6 @@ endif
 .PHONY: clean-project
 clean-project:
 	docker exec -u root -w /home/drupal $(DRUPAL_CONTAINER) bash -c 'shopt -s dotglob && rm -rf project/*'
-
-## gitlab-auth : Composer create auth json.
-.PHONY: gitlab-auth
-gitlab-auth:
-	docker exec $(DRUPAL_CONTAINER) composer --working-dir=$(COMPOSER_ROOT) config --auth gitlab-token.gitlab.choosit.com ${GITLAB_TOKEN} --no-ansi --no-interaction
 
 ## copy-files : Copy pre-commit, settings.php and .env files.
 .PHONY: copy-files
@@ -215,24 +204,14 @@ drupal-install:
 ## drupal-init : Drupal site install from scratch.
 .PHONY: drupal-init
 drupal-init:
-	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) site:install -y --db-url=${DB_DRIVER}://root:${DB_ROOT_PASSWORD}@${DB_HOST}/${DB_NAME} --account-name=${INSTALL_ACCOUNT_NAME} --account-pass=${INSTALL_ACCOUNT_PASS} --account-mail=${INSTALL_ACCOUNT_MAIL}
-
-## packages : npm install.
-.PHONY: packages
-packages:
-	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_node' --format "{{ .ID }}") npm install
-
-## build : npm run build.
-.PHONY: build
-build:
-	docker exec $(shell docker ps --filter name='^/$(PROJECT_NAME)_node' --format "{{ .ID }}") npm run build
+	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) site:install -y --db-url=${DB_DRIVER}://root:${DB_ROOT_PASSWORD}@${DB_HOST}/${DB_NAME} --account-name=${INSTALL_ACCOUNT_NAME} --account-pass=${INSTALL_ACCOUNT_PASS} --account-mail=${INSTALL_ACCOUNT_MAIL}                                   
 
 ## restore-dump : Restore dump.
 ##		For example: make restore-dump ./dump/<dump_name>.sql.gz
 .PHONY: restore-dump
 restore-dump:
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) sql-drop -y
-	docker exec -i $(DRUPAL_CONTAINER) gunzip -c $(filter-out $@,$(MAKECMDGOALS)) | docker exec -i $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) sql-cli
+	docker exec -i $(DRUPAL_CONTAINER) zcat $(filter-out $@,$(MAKECMDGOALS)) | docker exec -i $(DRUPAL_CONTAINER) mysql -u${DB_USER} -h${DB_HOST} -p${DB_PASSWORD} ${DB_NAME}
 	docker exec $(DRUPAL_CONTAINER) drush -r $(DRUPAL_ROOT) uli
 
 ## backup : Make a backup.

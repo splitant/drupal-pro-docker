@@ -15,9 +15,14 @@ $settings['file_scan_ignore_directories'] = [
   'bower_components',
 ];
 
-// $settings['trusted_host_patterns'] = array(
-//   '^localhost$',
-// );
+$settings['trusted_host_patterns'] = [
+  sprintf('^%s$', str_replace('.', '\.', getenv('PROJECT_BASE_URL'))),
+];
+
+$settings['reverse_proxy'] = TRUE;
+$settings['reverse_proxy_addresses'] = [
+  $_SERVER['REMOTE_ADDR']
+];
 
 $settings['entity_update_batch_size'] = 50;
 $settings['file_private_path'] = '../private';
@@ -43,11 +48,21 @@ $settings['config_sync_directory'] = '../config/sync';
 
 // Uncomment the following line as needed.
 
-// $config['system.site']['mail'] = 'superadmin@admin.com';
+$config['system.site']['mail'] = 'superadmin@admin.com';
 
-// $config['swiftmailer.transport']['smtp_host'] = 'mailhog';
-// $config['swiftmailer.transport']['transport'] = 'smtp';
-// $config['swiftmailer.transport']['smtp_port'] = 1025;
+/*
+ * Mailer
+ */
+$config['symfony_mailer.mailer_transport.smtp']['configuration']['port'] = '1025';
+$config['symfony_mailer.mailer_transport.smtp']['configuration']['host'] = sprintf('%s_solr', getenv('PROJECT_NAME'));
+$config['symfony_mailer.mailer_transport.smtp']['configuration']['query']['query_peer'] = TRUE;
+
+/*
+ * SOLR
+ */
+$config['search_api.server.solr']['backend_config']['connector_config']['host'] = sprintf('%s_solr', getenv('PROJECT_NAME'));
+$config['search_api.server.solr']['backend_config']['connector_config']['core'] = getenv('SOLR_CORE');
+$config['search_api.server.solr']['backend_config']['connector_config']['port'] = '8983';
 
 $databases['default']['default'] = [
   'database' => getenv('DB_NAME'),
