@@ -8,7 +8,8 @@ The goal is to set up fastly a local Drupal project with docker environment for 
 
 * [Official Drupal Docker Image](https://hub.docker.com/_/drupal)
 * [Official MySQL Docker Image](https://hub.docker.com/_/mysql)
-* [Official Node Docker Image](https://hub.docker.com/_/node)
+* [Official Solr Docker Image](https://hub.docker.com/_/solr)
+* [Official Redis Docker Image](https://hub.docker.com/_/redis)
 * [Official phpMyAdmin Docker Image](https://hub.docker.com/_/phpmyadmin)
 * [Official traefik Docker Image](https://hub.docker.com/_/traefik)
 * [Mailhog Docker Image](https://hub.docker.com/r/mailhog/mailhog)
