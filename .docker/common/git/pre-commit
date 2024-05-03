@@ -53,7 +53,7 @@ done
 
 # Put all filenames in the same line.
 FILES=$(echo "$FILES" | xargs)
-
+ERROR_PHP_QLTY=0
 if [ -n "$FILES" ]; then
     if ! ${PHP_CONTAINER_EXEC} ./vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=inc,info,install,module,php,profile,test,theme --ignore=**/node_modules/,www/themes/custom/*/assets "${ARRAY_FILES[@]}";
     then
