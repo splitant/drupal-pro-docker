@@ -75,6 +75,6 @@ $databases['default']['default'] = [
   'port' => getenv('DB_PORT'),
   'prefix' => '',
   'init_commands' => [
-    'isolation_level' => 'SET SESSION tx_isolation=\'READ-COMMITTED\'',
+    'isolation_level' => 'SET SESSION transaction_isolation=\'READ-COMMITTED\'',
   ],
 ];
