@@ -46,6 +46,8 @@ else {
 
 $settings['config_sync_directory'] = '../config/sync';
 
+$settings['state_cache'] = TRUE;
+
 // Uncomment the following line as needed.
 
 $config['system.site']['mail'] = 'superadmin@admin.com';
