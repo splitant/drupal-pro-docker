@@ -82,15 +82,15 @@ services:
       - "traefik.http.routers.${PROJECT_NAME}_mailhog.rule=Host(`mailhog.${PROJECT_BASE_URL}`)"
 
   solr:
-    build:
-      context: .
-      dockerfile: .docker/solr/Dockerfile
-      args:
-        - SOLR_TAG=${SOLR_TAG}
-        - SOLR_CONFIGSET_PATH=${SOLR_CONFIGSET_PATH}
-    environment:
-      - SOLR_CORE=${SOLR_CORE}
+    image: solr:${SOLR_TAG}
     container_name: "${PROJECT_NAME}_solr"
+    volumes:
+      - ${SOLR_CONFIGSET_PATH}:/solr-conf
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr-precreate
+      - ${SOLR_CORE}
+      - /solr-conf    
     labels:
       - "traefik.http.services.${PROJECT_NAME}_solr.loadbalancer.server.port=8983"
       - "traefik.http.routers.${PROJECT_NAME}_solr.rule=Host(`solr.${PROJECT_BASE_URL}`)"

@@ -2,5 +2,3 @@
 /.vscode
 /.env
 /.docker/traefik/certs
-/.docker/solr/solr-conf/conf/*
-!/.docker/solr/solr-conf/conf/.gitkeep
